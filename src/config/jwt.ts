@@ -1,9 +1,32 @@
-export const jwtConfig = {
-  secret: process.env.JWT_SECRET,
-  expiresIn: "15m",
+import "dotenv/config";
+import { SignOptions } from "jsonwebtoken";
+
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Variável ${name} não definida`);
+  }
+  return value;
+}
+
+export const jwtConfig: {
+  secret: string;
+  signOptions: SignOptions;
+} = {
+  secret: requiredEnv("JWT_SECRET"),
+  signOptions: {
+    expiresIn: "15m",
+    algorithm: "HS256",
+  },
 };
 
-export const refreshConfig = {
-  secret: process.env.REFRESH_SECRET,
-  expiresIn: "7d",
+export const refreshConfig: {
+  secret: string;
+  signOptions: SignOptions;
+} = {
+  secret: requiredEnv("REFRESH_SECRET"),
+  signOptions: {
+    expiresIn: "7d",
+    algorithm: "HS256",
+  },
 };
