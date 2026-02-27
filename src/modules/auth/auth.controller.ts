@@ -33,7 +33,7 @@ export async function register(req: Request, res: Response) {
   publishEmail({
     to: email,
     subject: "Confirme seu cadastro",
-    body: `Clique no link para validar: http://localhost:3000/verify/${verifyToken}`,
+    body: `Clique no link para validar: http://localhost:3000/auth/verify/${verifyToken}`,
   });
 
   res.json({ message: "Usuário registrado. Verifique seu email." });
