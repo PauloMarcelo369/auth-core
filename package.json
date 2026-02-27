@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --transpile-only src/index.ts",
+    "mail-worker": "ts-node-dev --transpile-only src/services/email-consumer.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,6 +17,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.2.3",
+    "@types/nodemailer": "^7.0.11",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   },
