@@ -1,18 +1,9 @@
 import "reflect-metadata";
-import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
+import app from "./app";
 dotenv.config();
 
 import { AppDataSource } from "./config/data-source";
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-app.get("/", (req, res) => {
-  res.send("API de Autenticação funcionando 🚀");
-});
 
 AppDataSource.initialize()
   .then(() => {
