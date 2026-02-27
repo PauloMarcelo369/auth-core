@@ -12,12 +12,11 @@ import {
   validateRefreshToken,
 } from "../../services/redis";
 
-import { publishEmail } from "../../services/rabbitmq-setup";
+import { publishEmail, connectRabbitMQ } from "../../services/rabbitmq-setup";
 
 import { User } from "../../entities/User";
 import bcrypt from "bcrypt";
 import { AppDataSource } from "../../config/data-source";
-import { JwtPayload } from "jsonwebtoken";
 
 export async function register(req: Request, res: Response) {
   const { email, password } = req.body;
@@ -30,6 +29,9 @@ export async function register(req: Request, res: Response) {
   await repo.save(user);
 
   const verifyToken = generateVerifyToken({ id: user.id });
+
+  await connectRabbitMQ();
+
   publishEmail({
     to: email,
     subject: "Confirme seu cadastro",
@@ -42,37 +44,51 @@ export async function register(req: Request, res: Response) {
 export async function verifyEmail(req: Request, res: Response) {
   const token = req.params.token;
 
-  try {
-    if (typeof token === "string") {
-      const payload = verifyToken(token);
+  if (typeof token === "string") {
+    const payload = verifyToken(token);
 
-      if (typeof payload === "object" && "id" in payload) {
-        const repo = AppDataSource.getRepository(User);
-        const user = await repo.findOne({ where: { id: payload.id } });
-        if (!user)
-          return res.status(404).json({ message: "Usuário não encontrado" });
+    if (typeof payload === "object" && "id" in payload) {
+      const repo = AppDataSource.getRepository(User);
+      const user = await repo.findOne({ where: { id: payload.id } });
+      if (!user)
+        return res.status(404).json({ message: "Usuário não encontrado" });
 
-        if (user.isVerified) {
-          return res.status(400).json({ message: "Email já verificado." });
-        }
-        user.isVerified = true;
-        await repo.save(user);
-        res.json({ message: "Email verificado com sucesso!" });
+      if (user.isVerified) {
+        return res.status(400).json({ message: "Email já verificado." });
       }
+      user.isVerified = true;
+      await repo.save(user);
+      return res.json({ message: "Email verificado com sucesso!" });
     }
-  } catch {
-    res.status(400).json({ message: "Token inválido ou expirado" });
   }
+
+  return res.status(400).json({ message: "Token inválido ou expirado" });
 }
 
 export async function login(req: Request, res: Response) {
-  const { user } = req.body;
+  const { email, password } = req.body;
+
+  const repo = AppDataSource.getRepository(User);
+  const user = await repo.findOne({ where: { email } });
+
+  if (!user) return res.status(404).json({ message: "Usuário não encontrado" });
+
+  const passwordMatch = await bcrypt.compare(password, user.password);
+
+  if (!passwordMatch) {
+    return res.status(400).json({ message: "Email ou senha inválidos" });
+  }
+
+  if (!user.isVerified) {
+    return res.status(400).json({ message: "Email ainda não foi verificado." });
+  }
+
   const accessToken = generateAccessToken({ id: user.id });
   const refreshToken = generateRefreshToken({ id: user.id });
 
   await storeRefreshToken(user.id, refreshToken);
 
-  res.json({ accessToken, refreshToken });
+  return res.json({ accessToken, refreshToken });
 }
 
 export async function refresh(req: Request, res: Response) {

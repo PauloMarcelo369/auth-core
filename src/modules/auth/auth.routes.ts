@@ -13,6 +13,6 @@ router.post("/auth/login", login);
 router.post("/auth/refresh", refresh);
 router.post("/auth/logout", logout);
 router.post("/auth/register", register);
-router.post("/auth/verify", verifyEmail);
+router.get("/auth/verify/:token", verifyEmail);
 
 export default router;
