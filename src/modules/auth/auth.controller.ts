@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import {
   generateAccessToken,
   generateRefreshToken,
+  generateVerifyToken,
   verifyRefreshToken,
 } from "../../utils/token";
 import {
@@ -9,6 +10,32 @@ import {
   removeRefreshToken,
   validateRefreshToken,
 } from "../../services/redis";
+
+import { publishEmail } from "../../services/rabbitmq-setup";
+
+import { User } from "../../entities/User";
+import bcrypt from "bcrypt";
+import { AppDataSource } from "../../config/data-source";
+
+export async function register(req: Request, res: Response) {
+  const { email, password } = req.body;
+  const repo = AppDataSource.getRepository(User);
+  const existing = await repo.findOne({ where: { email } });
+  if (existing) return res.status(400).json({ message: "Email já registrado" });
+
+  const hashed = await bcrypt.hash(password, 10);
+  const user = repo.create({ email, password: hashed });
+  await repo.save(user);
+
+  const verifyToken = generateVerifyToken({ id: user.id });
+  publishEmail({
+    to: email,
+    subject: "Confirme seu cadastro",
+    body: `Clique no link para validar: http://localhost:3000/verify/${verifyToken}`,
+  });
+
+  res.json({ message: "Usuário registrado. Verifique seu email." });
+}
 
 export async function login(req: Request, res: Response) {
   const { user } = req.body;

@@ -30,3 +30,14 @@ export const refreshConfig: {
     algorithm: "HS256",
   },
 };
+
+export const verifyConfig: {
+  secret: string;
+  signOptions: SignOptions;
+} = {
+  secret: requiredEnv("VERIFY_SECRET"),
+  signOptions: {
+    expiresIn: "7d",
+    algorithm: "HS256",
+  },
+};
