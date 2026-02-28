@@ -10,6 +10,7 @@ import {
   storeRefreshToken,
   removeRefreshToken,
   validateRefreshToken,
+  storeResetToken,
 } from "../../services/redis";
 
 import { publishEmail, connectRabbitMQ } from "../../services/rabbitmq-setup";
@@ -17,6 +18,7 @@ import { publishEmail, connectRabbitMQ } from "../../services/rabbitmq-setup";
 import { User } from "../../entities/User";
 import bcrypt from "bcrypt";
 import { AppDataSource } from "../../config/data-source";
+import { v4 as uuidv4 } from "uuid";
 
 export async function register(req: Request, res: Response) {
   const { email, password } = req.body;
@@ -39,6 +41,34 @@ export async function register(req: Request, res: Response) {
   });
 
   res.json({ message: "Usuário registrado. Verifique seu email." });
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+  const { email } = req.body;
+
+  if (!email) {
+    return res
+      .status(400)
+      .json("você precisa passar o email para realizar essa ação!");
+  }
+
+  const repo = AppDataSource.getRepository(User);
+  const user = await repo.findOne({ where: { email } });
+  if (!user) throw new Error("Usuário não encontrado");
+
+  const resetToken = uuidv4();
+  await storeResetToken(user.id, resetToken);
+  await connectRabbitMQ();
+
+  publishEmail({
+    to: email,
+    subject: "Recuperação de senha",
+    body: `Use o token para redefinir a senha: ${resetToken}`,
+  });
+
+  res.json({
+    message: "Pedido de redefinição enviado. Verifique o seu email.",
+  });
 }
 
 export async function verifyEmail(req: Request, res: Response) {

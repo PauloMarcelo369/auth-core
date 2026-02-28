@@ -11,9 +11,8 @@ export async function storeRefreshToken(userId: string, token: string) {
   await redis.set(`refresh:${userId}`, token, "EX", 7 * 24 * 60 * 60);
 }
 
-export async function storeResetToken(userId: string) {
-  const token = uuidv4();
-  await redis.set(`reset:${token}`, userId, "EX", 7 * 24 * 60 * 60);
+export async function storeResetToken(userId: string, token: string) {
+  await redis.set(`reset:${token}`, userId, "EX", 15 * 60);
 }
 
 export async function removeRefreshToken(userId: string) {
