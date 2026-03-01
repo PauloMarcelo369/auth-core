@@ -11,6 +11,8 @@ import {
   removeRefreshToken,
   validateRefreshToken,
   storeResetToken,
+  getUserIdByResetToken,
+  removeResetToken,
 } from "../../services/redis";
 
 import { publishEmail, connectRabbitMQ } from "../../services/rabbitmq-setup";
@@ -69,6 +71,27 @@ export async function forgotPassword(req: Request, res: Response) {
   res.json({
     message: "Pedido de redefinição enviado. Verifique o seu email.",
   });
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) {
+    return res.status(400).json("Os argumentos não podem ser vazios");
+  }
+
+  const userId = await getUserIdByResetToken(token);
+
+  if (!userId) {
+    return res.status(404).json("Token inválido ou expirado");
+  }
+
+  const repo = AppDataSource.getRepository(User);
+  const user = await repo.findOne({ where: { id: userId } });
+  if (!user) throw new Error("Usuário não encontrado");
+  user.password = await bcrypt.hash(newPassword, 10);
+  await repo.save(user);
+  await removeResetToken(token);
+  res.json({ message: "Senha redefinida com Sucesso!" });
 }
 
 export async function verifyEmail(req: Request, res: Response) {
