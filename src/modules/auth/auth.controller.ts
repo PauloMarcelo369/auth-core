@@ -169,7 +169,9 @@ export async function refresh(req: Request, res: Response) {
 }
 
 export async function logout(req: Request, res: Response) {
-  const { userId } = req.body;
+  const userId = req.user?.id;
+  if (!userId)
+    return res.status(400).json({ message: "Erro ao validar usuário" });
   await removeRefreshToken(userId);
   res.json({ message: "Logout realizado com sucesso" });
 }

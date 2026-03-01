@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { User } from "../entities/User";
+import { AppDataSource } from "../config/data-source";
 
-export async function userAuthentication(
+export async function userAuthorization(
   req: Request,
   res: Response,
   next: NextFunction,
@@ -17,12 +18,12 @@ export async function userAuthentication(
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    const repo = 
+    const repo = AppDataSource.getRepository(User);
 
     if (!payload.sub) {
       return res.status(403).json({ message: "invalid token" });
     }
-    const user = await repo.findById(payload.sub);
+    const user = await repo.findOne({ where: { id: payload.sub } });
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
@@ -30,7 +31,6 @@ export async function userAuthentication(
 
     req.user = {
       id: user.id,
-      role: user.role,
     };
 
     next();
