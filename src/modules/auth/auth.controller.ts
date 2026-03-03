@@ -126,6 +126,9 @@ export async function login(req: Request, res: Response) {
 
   if (!user) return res.status(404).json({ message: "Usuário não encontrado" });
 
+  if (!user.password) {
+    return res.status(400).json({ message: "Use login social" });
+  }
   const passwordMatch = await bcrypt.compare(password, user.password);
 
   if (!passwordMatch) {
