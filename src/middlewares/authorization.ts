@@ -20,10 +20,10 @@ export async function userAuthorization(
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     const repo = AppDataSource.getRepository(User);
 
-    if (!payload.sub) {
+    if (!payload.id) {
       return res.status(403).json({ message: "invalid token" });
     }
-    const user = await repo.findOne({ where: { id: payload.sub } });
+    const user = await repo.findOne({ where: { id: payload.id } });
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
