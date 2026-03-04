@@ -1,24 +1,24 @@
 import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as GitHubStrategy } from "passport-github2";
 import { AppDataSource } from "../../config/data-source";
 import { User } from "../../entities/User";
 
 passport.use(
-  new GoogleStrategy(
+  new GitHubStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: "http://localhost:3000/auth/google/callback",
+      clientID: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      callbackURL: "http://localhost:3000/auth/github/callback",
     },
     async (accessToken: any, refreshToken: any, profile: any, done: any) => {
       const repo = AppDataSource.getRepository(User);
       let user = await repo.findOne({
-        where: { provider: "google", providerId: profile.id },
+        where: { provider: "github", providerId: profile.id },
       });
       if (!user) {
         user = repo.create({
           email: profile.emails?.[0].value,
-          provider: "google",
+          provider: "github",
           password: undefined,
           providerId: profile.id,
           isVerified: true,
